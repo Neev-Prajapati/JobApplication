@@ -24,5 +24,6 @@ namespace JobAppBackend.Models
         public string? WhyHireYou { get; set; }
         public string Status { get; set; } = "Raw";
         public DateTime SubmittedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; }
     }
 }

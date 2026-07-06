@@ -59,8 +59,8 @@ namespace JobAppBackend.Controllers
                     }
                 }
 
-                // Generate token right after registration to auto-login
-                string token = GenerateJwtToken(request.Mobile);
+                // Generate token right after registration to auto-login (always false for new users)
+                string token = GenerateJwtToken(request.Mobile, false);
                 return Ok(new { token });
             }
             catch (Exception ex)
@@ -81,12 +81,13 @@ namespace JobAppBackend.Controllers
             {
                 string connectionString = _configuration.GetConnectionString("DefaultConnection") ?? "";
                 string storedHash = "";
+                bool isAdmin = false;
 
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     await connection.OpenAsync();
                     
-                    string sql = "SELECT PasswordHash FROM Users WHERE MobileNumber = @Mobile";
+                    string sql = "SELECT PasswordHash, IsAdmin FROM Users WHERE MobileNumber = @Mobile";
                     using (SqlCommand command = new SqlCommand(sql, connection))
                     {
                         command.Parameters.AddWithValue("@Mobile", request.Mobile);
@@ -95,6 +96,7 @@ namespace JobAppBackend.Controllers
                             if (await reader.ReadAsync())
                             {
                                 storedHash = reader.GetString(0);
+                                isAdmin = reader.GetBoolean(1);
                             }
                         }
                     }
@@ -105,7 +107,7 @@ namespace JobAppBackend.Controllers
                     return Unauthorized(new { message = "Invalid mobile number or password." });
                 }
 
-                string token = GenerateJwtToken(request.Mobile);
+                string token = GenerateJwtToken(request.Mobile, isAdmin);
                 return Ok(new { token });
             }
             catch (Exception ex)
@@ -114,16 +116,23 @@ namespace JobAppBackend.Controllers
             }
         }
 
-        private string GenerateJwtToken(string mobile)
+        private string GenerateJwtToken(string mobile, bool isAdmin)
         {
             var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"] ?? "super_secret_fallback_key_1234567890");
             
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, mobile)
+            };
+
+            if (isAdmin)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+            }
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(ClaimTypes.NameIdentifier, mobile)
-                }),
+                Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddDays(7),
                 Issuer = _configuration["Jwt:Issuer"],
                 Audience = _configuration["Jwt:Audience"],
