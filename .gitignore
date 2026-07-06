@@ -23,3 +23,7 @@ appsettings.Development.json
 # General
 .DS_Store
 Thumbs.db
+
+# Documentation
+plan.md
+Architecture_Explanation.md
