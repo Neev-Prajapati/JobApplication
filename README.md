@@ -4,18 +4,20 @@ A full-stack, modern web application for managing job applications. The system f
 
 ## Technologies Used
 
-- **Frontend:** React (Vite), Vanilla CSS (Dark Mode supported)
+- **Frontend:** React (Vite), Vanilla CSS (Responsive Mobile & Desktop)
 - **Backend:** C# ASP.NET Core Web API
 - **Database:** Microsoft SQL Server
 - **Security:** JWT (JSON Web Tokens) for authentication, BCrypt for password hashing
 
 ## Architecture Overview
 
-- **Authentication:** Users must securely log in or sign up using their mobile number and a password to submit a job application. The backend hashes the password using BCrypt. Upon successful login, the backend issues a JWT, which the frontend stores in `localStorage`.
+- **Authentication & RBAC:** Users must securely log in or sign up using their mobile number and a password to submit a job application. The backend hashes the password using BCrypt. Upon successful login, the backend issues a JWT, which the frontend stores in `localStorage`. The system uses Role-Based Access Control (RBAC) to distinguish standard users from Administrators.
 - **Form Submission:** The job application form uses the `[Authorize]` attribute on the C# backend to ensure that only authenticated users with a valid JWT can submit data.
+- **Admin Dashboard:** A dedicated, fully responsive dashboard for administrators to view, filter, and manage job applications. Features include status updates (Reviewed, Shortlisted, Rejected), application deletion, and a detailed applicant view modal.
+- **Performance & UI:** The application utilizes React `lazy` loading and `Suspense` for code splitting. The UI supports real-time Dark/Light theme toggling via CSS variables and `data-theme` attributes.
 - **Database:** Raw ADO.NET parameterization is used to communicate with the MS SQL Database, preventing SQL injection attacks and maximizing performance.
 
-*(For a deeper dive into how the authentication and architecture work, please see the [Architecture_Explanation.md](./Architecture_Explanation.md) file).*
+*(For a deeper dive into how the authentication and architecture work, please see the [Architecture_Explanation.md](./Architecture_Explanation.md) file or the generated PDF version).*
 
 ## Local Setup Instructions
 
@@ -26,6 +28,7 @@ Follow these steps to run the project locally on your machine.
 2. Open SSMS and connect to your local server (usually `localhost\SQLEXPRESS`).
 3. Open the `schema.sql` file located in the root of this repository.
 4. Execute the script in SSMS to automatically create the `JobAppDb` database and the required `Applications` and `Users` tables.
+*(Note: To test the Admin features, you will need to manually update a user's `Role` column to `'Admin'` in the `Users` table).*
 
 ### 2. Backend Setup (C# API)
 1. Open a terminal and navigate to the `JobAppBackend` folder.
@@ -51,4 +54,4 @@ Follow these steps to run the project locally on your machine.
 ## Current Stages Completed
 - **Stage 1:** Frontend form design and Backend database connection.
 - **Stage 2:** Secure Authentication (Login/Signup Modal, JWT, BCrypt).
-- **Stage 3:** Admin Dashboard (Coming soon).
+- **Stage 3:** Full Admin Dashboard, Role-Based Access, UI Theming, and Mobile Responsiveness.
