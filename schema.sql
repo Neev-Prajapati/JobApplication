@@ -1,6 +1,7 @@
 USE JobAppDb;
 GO
 
+DROP TABLE IF EXISTS ApplicationInteractions;
 DROP TABLE IF EXISTS ApplicationDetails;
 DROP TABLE IF EXISTS Applications;
 DROP TABLE IF EXISTS Users;
@@ -31,5 +32,15 @@ CREATE TABLE Users (
     PasswordHash NVARCHAR(255) NOT NULL,
     IsAdmin BIT NOT NULL DEFAULT 0,
     CreatedAt DATETIME DEFAULT GETDATE()
+);
+
+-- Stage 4: Admin Interactions
+CREATE TABLE ApplicationInteractions (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    ApplicationId INT NOT NULL FOREIGN KEY REFERENCES Applications(Id) ON DELETE CASCADE,
+    AdminId INT NOT NULL FOREIGN KEY REFERENCES Users(Id),
+    OldStatus NVARCHAR(50) NOT NULL,
+    NewStatus NVARCHAR(50) NOT NULL,
+    ChangedAt DATETIME DEFAULT GETDATE()
 );
 GO

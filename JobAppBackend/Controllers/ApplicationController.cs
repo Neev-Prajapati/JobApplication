@@ -119,17 +119,59 @@ namespace JobAppBackend.Controllers
             if (string.IsNullOrEmpty(request.Status)) return BadRequest(new { message = "Status is required." });
             try
             {
+                var adminIdClaim = User.Claims.FirstOrDefault(c => c.Type == "AdminId");
+                if (adminIdClaim == null) return Unauthorized(new { message = "AdminId missing in token." });
+                int adminId = int.Parse(adminIdClaim.Value);
+
                 string connectionString = _configuration.GetConnectionString("DefaultConnection") ?? "";
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     await connection.OpenAsync();
-                    string sql = "UPDATE Applications SET Status = @Status WHERE Id = @Id";
-                    using (SqlCommand command = new SqlCommand(sql, connection))
+
+                    string oldStatus = "";
+                    string getSql = "SELECT Status FROM Applications WHERE Id = @Id";
+                    using (SqlCommand getCmd = new SqlCommand(getSql, connection))
                     {
-                        command.Parameters.AddWithValue("@Status", request.Status);
-                        command.Parameters.AddWithValue("@Id", id);
-                        int rowsAffected = await command.ExecuteNonQueryAsync();
-                        if (rowsAffected == 0) return NotFound(new { message = "Application not found." });
+                        getCmd.Parameters.AddWithValue("@Id", id);
+                        var result = await getCmd.ExecuteScalarAsync();
+                        if (result == null) return NotFound(new { message = "Application not found." });
+                        oldStatus = result.ToString() ?? "";
+                    }
+
+                    if (oldStatus == request.Status) 
+                    {
+                        return Ok(new { message = "Status is already up to date." });
+                    }
+
+                    using (SqlTransaction transaction = connection.BeginTransaction())
+                    {
+                        try
+                        {
+                            string sql = "UPDATE Applications SET Status = @Status WHERE Id = @Id";
+                            using (SqlCommand command = new SqlCommand(sql, connection, transaction))
+                            {
+                                command.Parameters.AddWithValue("@Status", request.Status);
+                                command.Parameters.AddWithValue("@Id", id);
+                                await command.ExecuteNonQueryAsync();
+                            }
+
+                            string logSql = "INSERT INTO ApplicationInteractions (ApplicationId, AdminId, OldStatus, NewStatus) VALUES (@AppId, @AdminId, @Old, @New)";
+                            using (SqlCommand logCmd = new SqlCommand(logSql, connection, transaction))
+                            {
+                                logCmd.Parameters.AddWithValue("@AppId", id);
+                                logCmd.Parameters.AddWithValue("@AdminId", adminId);
+                                logCmd.Parameters.AddWithValue("@Old", oldStatus);
+                                logCmd.Parameters.AddWithValue("@New", request.Status);
+                                await logCmd.ExecuteNonQueryAsync();
+                            }
+
+                            transaction.Commit();
+                        }
+                        catch
+                        {
+                            transaction.Rollback();
+                            throw;
+                        }
                     }
                 }
                 return Ok(new { message = "Status updated successfully." });
