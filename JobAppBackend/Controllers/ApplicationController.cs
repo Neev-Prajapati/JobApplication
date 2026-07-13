@@ -12,6 +12,7 @@ namespace JobAppBackend.Controllers
     public class StatusUpdateRequest
     {
         public string Status { get; set; } = string.Empty;
+        public string? AdminNotes { get; set; }
     }
 
     [ApiController]
@@ -39,7 +40,7 @@ namespace JobAppBackend.Controllers
                 {
                     await connection.OpenAsync();
                     string sql = @"
-                        SELECT a.Id, a.Position, a.Name, a.Mobile, a.Email, a.Status, a.SubmittedAt,
+                        SELECT a.Id, a.Position, a.Name, a.Mobile, a.Email, a.Status, a.AdminNotes, a.SubmittedAt,
                                d.LocationData, d.ExperienceData, d.TextResponses
                         FROM Applications a
                         LEFT JOIN ApplicationDetails d ON a.Id = d.ApplicationId
@@ -59,6 +60,7 @@ namespace JobAppBackend.Controllers
                                     Mobile = reader.GetString(reader.GetOrdinal("Mobile")),
                                     Email = reader.GetString(reader.GetOrdinal("Email")),
                                     Status = reader.IsDBNull(reader.GetOrdinal("Status")) ? "Raw" : reader.GetString(reader.GetOrdinal("Status")),
+                                    AdminNotes = reader.IsDBNull(reader.GetOrdinal("AdminNotes")) ? null : reader.GetString(reader.GetOrdinal("AdminNotes")),
                                     CreatedAt = reader.GetDateTime(reader.GetOrdinal("SubmittedAt"))
                                 };
 
@@ -129,7 +131,7 @@ namespace JobAppBackend.Controllers
                     await connection.OpenAsync();
 
                     string oldStatus = "";
-                    string getSql = "SELECT Status FROM Applications WHERE Id = @Id";
+                    string getSql = "SELECT Status, AdminNotes FROM Applications WHERE Id = @Id";
                     using (SqlCommand getCmd = new SqlCommand(getSql, connection))
                     {
                         getCmd.Parameters.AddWithValue("@Id", id);
@@ -138,19 +140,17 @@ namespace JobAppBackend.Controllers
                         oldStatus = result.ToString() ?? "";
                     }
 
-                    if (oldStatus == request.Status) 
-                    {
-                        return Ok(new { message = "Status is already up to date." });
-                    }
+                    // We removed the strict 'already up to date' block because notes could have changed even if status didn't.
 
                     using (SqlTransaction transaction = connection.BeginTransaction())
                     {
                         try
                         {
-                            string sql = "UPDATE Applications SET Status = @Status WHERE Id = @Id";
+                            string sql = "UPDATE Applications SET Status = @Status, AdminNotes = @AdminNotes WHERE Id = @Id";
                             using (SqlCommand command = new SqlCommand(sql, connection, transaction))
                             {
                                 command.Parameters.AddWithValue("@Status", request.Status);
+                                command.Parameters.AddWithValue("@AdminNotes", request.AdminNotes ?? (object)DBNull.Value);
                                 command.Parameters.AddWithValue("@Id", id);
                                 await command.ExecuteNonQueryAsync();
                             }

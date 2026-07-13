@@ -23,6 +23,7 @@ namespace JobAppBackend.Models
         public string? RecentLearning { get; set; }
         public string? WhyHireYou { get; set; }
         public string Status { get; set; } = "Raw";
+        public string? AdminNotes { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }

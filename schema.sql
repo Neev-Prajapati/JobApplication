@@ -14,6 +14,7 @@ CREATE TABLE Applications (
     Mobile NVARCHAR(20) NOT NULL,
     Email NVARCHAR(150) NOT NULL,
     Status NVARCHAR(50) DEFAULT 'Raw',
+    AdminNotes NVARCHAR(MAX),
     SubmittedAt DATETIME DEFAULT GETDATE()
 );
 

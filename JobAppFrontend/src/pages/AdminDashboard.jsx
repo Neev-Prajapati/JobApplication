@@ -57,7 +57,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const updateStatus = async (id, newStatus) => {
+  const updateStatus = async (id, newStatus, newNotes) => {
     setStatusUpdateLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -67,14 +67,14 @@ export default function AdminDashboard() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: newStatus, adminNotes: newNotes })
       });
       
-      if (!response.ok) throw new Error('Failed to update status');
+      if (!response.ok) throw new Error('Failed to update status/notes');
       
-      setApplications(prev => prev.map(app => app.id === id ? { ...app, status: newStatus } : app));
+      setApplications(prev => prev.map(app => app.id === id ? { ...app, status: newStatus, adminNotes: newNotes } : app));
       if (selectedApp && selectedApp.id === id) {
-        setSelectedApp({ ...selectedApp, status: newStatus });
+        setSelectedApp({ ...selectedApp, status: newStatus, adminNotes: newNotes });
       }
     } catch (err) {
       alert(err.message);
@@ -117,8 +117,8 @@ export default function AdminDashboard() {
     if (!selectedApp) return;
     
     const originalApp = applications.find(a => a.id === selectedApp.id);
-    if (originalApp && originalApp.status !== selectedApp.status) {
-      await updateStatus(selectedApp.id, selectedApp.status);
+    if (originalApp && (originalApp.status !== selectedApp.status || originalApp.adminNotes !== selectedApp.adminNotes)) {
+      await updateStatus(selectedApp.id, selectedApp.status, selectedApp.adminNotes);
     }
     
     setIsModalOpen(false);
@@ -130,6 +130,23 @@ export default function AdminDashboard() {
       case 'Rejected': return { bg: 'rgba(220, 38, 38, 0.15)', text: '#ef4444', dot: '#ef4444' };
       case 'Reviewed': return { bg: 'rgba(191, 87, 0, 0.15)', text: '#bf5700', dot: '#bf5700' };
       default: return { bg: 'rgba(115, 115, 115, 0.15)', text: '#737373', dot: '#737373' };
+    }
+  };
+
+  const renderExperience = (years, months, format = 'short') => {
+    const isYEmpty = !years || years === '0' || String(years).toLowerCase() === 'empty';
+    const isMEmpty = !months || months === '0' || String(months).toLowerCase() === 'empty';
+    
+    if (isYEmpty && isMEmpty) return 'None';
+    
+    if (format === 'short') {
+      const yStr = isYEmpty ? '' : `${years}y`;
+      const mStr = isMEmpty ? '' : `${months}m`;
+      return [yStr, mStr].filter(Boolean).join(' ');
+    } else {
+      const yStr = isYEmpty ? '' : `${years} Years`;
+      const mStr = isMEmpty ? '' : `${months} Months`;
+      return [yStr, mStr].filter(Boolean).join(', ');
     }
   };
 
@@ -227,7 +244,7 @@ export default function AdminDashboard() {
                   >
                     <td style={{ padding: '24px 30px', fontWeight: '600', color: 'var(--text-h)', fontSize: '1.05rem' }}>{app.name}</td>
                     <td style={{ padding: '24px 30px', color: 'var(--text)' }}>{app.position}</td>
-                    <td style={{ padding: '24px 30px', color: 'var(--text)' }}>{app.workExperienceYears}y {app.workExperienceMonths}m</td>
+                    <td style={{ padding: '24px 30px', color: 'var(--text)' }}>{renderExperience(app.workExperienceYears, app.workExperienceMonths, 'short')}</td>
                     <td style={{ padding: '24px 30px' }}>
                       <span style={{ 
                         padding: '6px 14px', borderRadius: '999px', fontSize: '0.85rem', fontWeight: '600',
@@ -291,13 +308,13 @@ export default function AdminDashboard() {
               </div>
 
               <div className="details-grid">
-                <div><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>Experience</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.workExperienceYears} Years, {selectedApp.workExperienceMonths} Months</p></div>
+                <div><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>Experience</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{renderExperience(selectedApp.workExperienceYears, selectedApp.workExperienceMonths, 'long')}</p></div>
                 <div><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>Employment</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.isCurrentlyEmployed ? 'Employed' : 'Unemployed'}</p></div>
-                {selectedApp.employer && (
+                {(selectedApp.employer && selectedApp.employer !== 'empty') && (
                   <div style={{ gridColumn: 'span 2' }}><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>{selectedApp.isCurrentlyEmployed ? 'Current' : 'Last'} Employer</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.employer}</p></div>
                 )}
-                <div><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>Current Salary</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.salary ? `₹${selectedApp.salary} / mo` : 'N/A'}</p></div>
-                <div><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>Expected Salary</p><p style={{ margin: 0, fontWeight: 'bold', color: '#bf5700', fontSize: '1.05rem' }}>₹{selectedApp.expectedSalary} <span style={{fontSize:'0.8rem', fontWeight:'normal', color:'var(--text)'}}>/ mo</span></p></div>
+                <div><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>Current Salary</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{(!selectedApp.salary || selectedApp.salary === 'empty' || selectedApp.salary === '0') ? 'N/A' : `₹${selectedApp.salary} / mo`}</p></div>
+                <div><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>Expected Salary</p><p style={{ margin: 0, fontWeight: 'bold', color: '#bf5700', fontSize: '1.05rem' }}>{(!selectedApp.expectedSalary || selectedApp.expectedSalary === 'empty' || selectedApp.expectedSalary === '0') ? 'N/A' : <span>₹{selectedApp.expectedSalary} <span style={{fontSize:'0.8rem', fontWeight:'normal', color:'var(--text)'}}>/ mo</span></span>}</p></div>
               </div>
 
               <div>
@@ -311,6 +328,16 @@ export default function AdminDashboard() {
                 <div style={{ padding: '16px', borderRadius: '8px', fontSize: '0.95rem', border: '1px solid var(--border)', backgroundColor: 'var(--code-bg)', color: 'var(--text-h)', lineHeight: '1.6', fontStyle: 'italic' }}>
                   "{selectedApp.whyHireYou}"
                 </div>
+              </div>
+              
+              <div>
+                <p style={{ fontSize: '0.85rem', color: '#bf5700', margin: '0 0 8px 0', fontWeight: '700' }}>Admin Notes (Interview / Comments)</p>
+                <textarea 
+                  style={{ width: '100%', minHeight: '100px', padding: '12px', borderRadius: '8px', fontSize: '0.95rem', border: '1px solid var(--border)', backgroundColor: 'var(--bg)', color: 'var(--text-h)', resize: 'vertical', fontFamily: 'inherit', outline: 'none' }}
+                  placeholder="Add your notes about this applicant here..."
+                  value={selectedApp.adminNotes || ''}
+                  onChange={(e) => setSelectedApp({ ...selectedApp, adminNotes: e.target.value })}
+                />
               </div>
             </div>
 
