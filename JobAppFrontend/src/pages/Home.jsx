@@ -21,6 +21,7 @@ function App() {
   const navigate = useNavigate();
   const [submitted, setSubmitted] = useState(false);
   const [validationModalOpen, setValidationModalOpen] = useState(false);
+  const [validationMessage, setValidationMessage] = useState("Please fill the form completely.");
   const [jwtToken, setJwtToken] = useState(localStorage.getItem('token') || null);
   const [isAdmin, setIsAdmin] = useState(false);
   
@@ -86,10 +87,25 @@ function App() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.position || !e.target.checkValidity()) {
+    
+    if (!formData.position) {
+      setValidationMessage("Please select a Position at the top of the form.");
       setValidationModalOpen(true);
       return;
     }
+    
+    if (!e.target.checkValidity()) {
+      const invalidElement = e.target.querySelector(':invalid');
+      if (invalidElement && invalidElement.validationMessage) {
+        // e.g. "Value must be less than or equal to 50"
+        setValidationMessage(invalidElement.validationMessage);
+      } else {
+        setValidationMessage("Please fill out all required fields correctly.");
+      }
+      setValidationModalOpen(true);
+      return;
+    }
+    
     if (!jwtToken) { setAuthMode('login'); setIsAuthModalOpen(true); } else { submitApplication(); }
   };
 
@@ -228,7 +244,7 @@ function App() {
             <div className="form-col">
               <label className="form-label">Work Experience</label>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <input type="number" name="workExperienceYears" className="form-control" style={{ width: '100px' }} min="0" max="50" value={formData.workExperienceYears} onChange={handleInputChange} required />
+                <input type="number" name="workExperienceYears" className="form-control" style={{ width: '100px' }} min="0" max="100" value={formData.workExperienceYears} onChange={handleInputChange} required />
                 <span className="input-suffix">years</span>
                 <input type="number" name="workExperienceMonths" className="form-control" style={{ width: '100px' }} min="0" max="11" value={formData.workExperienceMonths} onChange={handleInputChange} required />
                 <span className="input-suffix">months</span>
@@ -342,7 +358,7 @@ function App() {
         <div className="modal-overlay" style={{ zIndex: 2000 }} onClick={() => setValidationModalOpen(false)}>
           <div className="alert-modal" onClick={e => e.stopPropagation()}>
             <h3 style={{ margin: '0 0 15px 0', fontWeight: '400', fontSize: '20px', color: '#333' }}>Biziverse</h3>
-            <p style={{ margin: '0 0 25px 0', color: '#333', fontSize: '15px' }}>Please fill the form completely.</p>
+            <p style={{ margin: '0 0 25px 0', color: '#333', fontSize: '15px' }}>{validationMessage}</p>
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button 
                 onClick={() => setValidationModalOpen(false)}

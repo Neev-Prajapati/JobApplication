@@ -3,6 +3,9 @@ using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Authorization;
 using JobAppBackend.Models;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System;
+using System.Text.Json;
 
 namespace JobAppBackend.Controllers
 {
@@ -29,37 +32,74 @@ namespace JobAppBackend.Controllers
             try
             {
                 string connectionString = _configuration.GetConnectionString("DefaultConnection") ?? "";
-                var applications = new List<Application>();
+                var applications = new List<ApplicationDto>();
+                var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     await connection.OpenAsync();
-                    string sql = "SELECT * FROM Applications ORDER BY SubmittedAt DESC";
+                    string sql = @"
+                        SELECT a.Id, a.Position, a.Name, a.Mobile, a.Email, a.Status, a.SubmittedAt,
+                               d.LocationData, d.ExperienceData, d.TextResponses
+                        FROM Applications a
+                        LEFT JOIN ApplicationDetails d ON a.Id = d.ApplicationId
+                        ORDER BY a.SubmittedAt DESC";
+
                     using (SqlCommand command = new SqlCommand(sql, connection))
                     {
                         using (SqlDataReader reader = await command.ExecuteReaderAsync())
                         {
                             while (await reader.ReadAsync())
                             {
-                                applications.Add(new Application
+                                var app = new ApplicationDto
                                 {
                                     Id = reader.GetInt32(reader.GetOrdinal("Id")),
                                     Position = reader.GetString(reader.GetOrdinal("Position")),
                                     Name = reader.GetString(reader.GetOrdinal("Name")),
                                     Mobile = reader.GetString(reader.GetOrdinal("Mobile")),
                                     Email = reader.GetString(reader.GetOrdinal("Email")),
-                                    WorkExperienceYears = reader.GetInt32(reader.GetOrdinal("WorkExperienceYears")),
-                                    WorkExperienceMonths = reader.GetInt32(reader.GetOrdinal("WorkExperienceMonths")),
-                                    IsCurrentlyEmployed = reader.GetBoolean(reader.GetOrdinal("IsCurrentlyEmployed")),
-                                    Employer = reader.IsDBNull(reader.GetOrdinal("Employer")) ? null : reader.GetString(reader.GetOrdinal("Employer")),
-                                    Salary = reader.IsDBNull(reader.GetOrdinal("Salary")) ? null : reader.GetDecimal(reader.GetOrdinal("Salary")),
-                                    ExpectedSalary = reader.IsDBNull(reader.GetOrdinal("ExpectedSalary")) ? null : reader.GetDecimal(reader.GetOrdinal("ExpectedSalary")),
-                                    JoiningDate = reader.GetDateTime(reader.GetOrdinal("JoiningDate")),
-                                    RecentLearning = reader.GetString(reader.GetOrdinal("RecentLearning")),
-                                    WhyHireYou = reader.GetString(reader.GetOrdinal("WhyHireYou")),
                                     Status = reader.IsDBNull(reader.GetOrdinal("Status")) ? "Raw" : reader.GetString(reader.GetOrdinal("Status")),
                                     CreatedAt = reader.GetDateTime(reader.GetOrdinal("SubmittedAt"))
-                                });
+                                };
+
+                                if (!reader.IsDBNull(reader.GetOrdinal("LocationData")))
+                                {
+                                    var locData = JsonSerializer.Deserialize<ApplicationDto>(reader.GetString(reader.GetOrdinal("LocationData")), jsonOptions);
+                                    if (locData != null)
+                                    {
+                                        app.FromState = locData.FromState;
+                                        app.FromCity = locData.FromCity;
+                                        app.BasedState = locData.BasedState;
+                                        app.BasedCity = locData.BasedCity;
+                                    }
+                                }
+
+                                if (!reader.IsDBNull(reader.GetOrdinal("ExperienceData")))
+                                {
+                                    var expData = JsonSerializer.Deserialize<ApplicationDto>(reader.GetString(reader.GetOrdinal("ExperienceData")), jsonOptions);
+                                    if (expData != null)
+                                    {
+                                        app.WorkExperienceYears = expData.WorkExperienceYears;
+                                        app.WorkExperienceMonths = expData.WorkExperienceMonths;
+                                        app.IsCurrentlyEmployed = expData.IsCurrentlyEmployed;
+                                        app.Employer = expData.Employer;
+                                        app.Salary = expData.Salary;
+                                        app.ExpectedSalary = expData.ExpectedSalary;
+                                        app.JoiningDate = expData.JoiningDate;
+                                    }
+                                }
+
+                                if (!reader.IsDBNull(reader.GetOrdinal("TextResponses")))
+                                {
+                                    var txtData = JsonSerializer.Deserialize<ApplicationDto>(reader.GetString(reader.GetOrdinal("TextResponses")), jsonOptions);
+                                    if (txtData != null)
+                                    {
+                                        app.RecentLearning = txtData.RecentLearning;
+                                        app.WhyHireYou = txtData.WhyHireYou;
+                                    }
+                                }
+
+                                applications.Add(app);
                             }
                         }
                     }
@@ -110,6 +150,7 @@ namespace JobAppBackend.Controllers
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     await connection.OpenAsync();
+                    // ApplicationDetails has ON DELETE CASCADE, so deleting from Applications is sufficient
                     string sql = "DELETE FROM Applications WHERE Id = @Id";
                     using (SqlCommand command = new SqlCommand(sql, connection))
                     {
@@ -128,7 +169,7 @@ namespace JobAppBackend.Controllers
 
         [HttpPost]
         [Microsoft.AspNetCore.Authorization.Authorize]
-        public async Task<IActionResult> SubmitApplication([FromBody] Application app)
+        public async Task<IActionResult> SubmitApplication([FromBody] ApplicationDto appDto)
         {
             if (!ModelState.IsValid)
             {
@@ -142,39 +183,62 @@ namespace JobAppBackend.Controllers
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
                     await connection.OpenAsync();
-
-                    string sql = @"
-                        INSERT INTO Applications (
-                            Position, Name, Mobile, Email, FromState, FromCity, BasedState, BasedCity, 
-                            WorkExperienceYears, WorkExperienceMonths, IsCurrentlyEmployed, Employer, 
-                            Salary, ExpectedSalary, JoiningDate, RecentLearning, WhyHireYou, Status
-                        ) VALUES (
-                            @Position, @Name, @Mobile, @Email, @FromState, @FromCity, @BasedState, @BasedCity, 
-                            @WorkExperienceYears, @WorkExperienceMonths, @IsCurrentlyEmployed, @Employer, 
-                            @Salary, @ExpectedSalary, @JoiningDate, @RecentLearning, @WhyHireYou, 'Raw'
-                        )";
-
-                    using (SqlCommand command = new SqlCommand(sql, connection))
+                    
+                    using (SqlTransaction transaction = connection.BeginTransaction())
                     {
-                        command.Parameters.AddWithValue("@Position", app.Position);
-                        command.Parameters.AddWithValue("@Name", app.Name);
-                        command.Parameters.AddWithValue("@Mobile", app.Mobile);
-                        command.Parameters.AddWithValue("@Email", app.Email);
-                        command.Parameters.AddWithValue("@FromState", (object?)app.FromState ?? DBNull.Value);
-                        command.Parameters.AddWithValue("@FromCity", (object?)app.FromCity ?? DBNull.Value);
-                        command.Parameters.AddWithValue("@BasedState", (object?)app.BasedState ?? DBNull.Value);
-                        command.Parameters.AddWithValue("@BasedCity", (object?)app.BasedCity ?? DBNull.Value);
-                        command.Parameters.AddWithValue("@WorkExperienceYears", app.WorkExperienceYears);
-                        command.Parameters.AddWithValue("@WorkExperienceMonths", app.WorkExperienceMonths);
-                        command.Parameters.AddWithValue("@IsCurrentlyEmployed", app.IsCurrentlyEmployed);
-                        command.Parameters.AddWithValue("@Employer", (object?)app.Employer ?? DBNull.Value);
-                        command.Parameters.AddWithValue("@Salary", (object?)app.Salary ?? DBNull.Value);
-                        command.Parameters.AddWithValue("@ExpectedSalary", (object?)app.ExpectedSalary ?? DBNull.Value);
-                        command.Parameters.AddWithValue("@JoiningDate", app.JoiningDate);
-                        command.Parameters.AddWithValue("@RecentLearning", (object?)app.RecentLearning ?? DBNull.Value);
-                        command.Parameters.AddWithValue("@WhyHireYou", (object?)app.WhyHireYou ?? DBNull.Value);
+                        try
+                        {
+                            // Insert into Applications table and get the new Id
+                            string sqlApp = @"
+                                INSERT INTO Applications (Position, Name, Mobile, Email, Status, SubmittedAt) 
+                                OUTPUT INSERTED.Id
+                                VALUES (@Position, @Name, @Mobile, @Email, 'Raw', GETDATE())";
+                                
+                            int applicationId;
+                            using (SqlCommand cmdApp = new SqlCommand(sqlApp, connection, transaction))
+                            {
+                                cmdApp.Parameters.AddWithValue("@Position", appDto.Position);
+                                cmdApp.Parameters.AddWithValue("@Name", appDto.Name);
+                                cmdApp.Parameters.AddWithValue("@Mobile", appDto.Mobile);
+                                cmdApp.Parameters.AddWithValue("@Email", appDto.Email);
+                                applicationId = (int)await cmdApp.ExecuteScalarAsync();
+                            }
 
-                        await command.ExecuteNonQueryAsync();
+                            // Serialize details to JSON
+                            var locationData = JsonSerializer.Serialize(new { 
+                                appDto.FromState, appDto.FromCity, appDto.BasedState, appDto.BasedCity 
+                            });
+                            
+                            var experienceData = JsonSerializer.Serialize(new { 
+                                appDto.WorkExperienceYears, appDto.WorkExperienceMonths, appDto.IsCurrentlyEmployed, 
+                                appDto.Employer, appDto.Salary, appDto.ExpectedSalary, appDto.JoiningDate 
+                            });
+                            
+                            var textResponses = JsonSerializer.Serialize(new { 
+                                appDto.RecentLearning, appDto.WhyHireYou 
+                            });
+
+                            // Insert into ApplicationDetails
+                            string sqlDetails = @"
+                                INSERT INTO ApplicationDetails (ApplicationId, LocationData, ExperienceData, TextResponses)
+                                VALUES (@ApplicationId, @LocationData, @ExperienceData, @TextResponses)";
+                                
+                            using (SqlCommand cmdDetails = new SqlCommand(sqlDetails, connection, transaction))
+                            {
+                                cmdDetails.Parameters.AddWithValue("@ApplicationId", applicationId);
+                                cmdDetails.Parameters.AddWithValue("@LocationData", locationData);
+                                cmdDetails.Parameters.AddWithValue("@ExperienceData", experienceData);
+                                cmdDetails.Parameters.AddWithValue("@TextResponses", textResponses);
+                                await cmdDetails.ExecuteNonQueryAsync();
+                            }
+
+                            transaction.Commit();
+                        }
+                        catch
+                        {
+                            transaction.Rollback();
+                            throw;
+                        }
                     }
                 }
 
@@ -182,7 +246,6 @@ namespace JobAppBackend.Controllers
             }
             catch (Exception ex)
             {
-                // In production, log the exception properly.
                 return StatusCode(500, new { message = "An error occurred while submitting the application.", details = ex.Message });
             }
         }

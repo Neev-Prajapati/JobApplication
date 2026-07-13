@@ -1,7 +1,9 @@
-CREATE DATABASE JobAppDb;
+USE JobAppDb;
 GO
 
-USE JobAppDb;
+DROP TABLE IF EXISTS ApplicationDetails;
+DROP TABLE IF EXISTS Applications;
+DROP TABLE IF EXISTS Users;
 GO
 
 CREATE TABLE Applications (
@@ -10,21 +12,16 @@ CREATE TABLE Applications (
     Name NVARCHAR(150) NOT NULL,
     Mobile NVARCHAR(20) NOT NULL,
     Email NVARCHAR(150) NOT NULL,
-    FromState NVARCHAR(100),
-    FromCity NVARCHAR(100),
-    BasedState NVARCHAR(100),
-    BasedCity NVARCHAR(100),
-    WorkExperienceYears INT NOT NULL,
-    WorkExperienceMonths INT NOT NULL,
-    IsCurrentlyEmployed BIT NOT NULL,
-    Employer NVARCHAR(200),
-    Salary DECIMAL(18,2),
-    ExpectedSalary DECIMAL(18,2),
-    JoiningDate DATE NOT NULL,
-    RecentLearning NVARCHAR(MAX),
-    WhyHireYou NVARCHAR(MAX),
     Status NVARCHAR(50) DEFAULT 'Raw',
     SubmittedAt DATETIME DEFAULT GETDATE()
+);
+
+CREATE TABLE ApplicationDetails (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    ApplicationId INT NOT NULL UNIQUE FOREIGN KEY REFERENCES Applications(Id) ON DELETE CASCADE,
+    LocationData NVARCHAR(MAX),
+    ExperienceData NVARCHAR(MAX),
+    TextResponses NVARCHAR(MAX)
 );
 
 -- Stage 2: Authentication
