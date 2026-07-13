@@ -13,12 +13,12 @@ namespace JobAppBackend.Models
         public string? FromCity { get; set; }
         public string? BasedState { get; set; }
         public string? BasedCity { get; set; }
-        public int WorkExperienceYears { get; set; }
-        public int WorkExperienceMonths { get; set; }
+        public string WorkExperienceYears { get; set; } = string.Empty;
+        public string WorkExperienceMonths { get; set; } = string.Empty;
         public bool IsCurrentlyEmployed { get; set; }
         public string? Employer { get; set; }
-        public decimal? Salary { get; set; }
-        public decimal? ExpectedSalary { get; set; }
+        public string? Salary { get; set; }
+        public string? ExpectedSalary { get; set; }
         public DateTime JoiningDate { get; set; }
         public string? RecentLearning { get; set; }
         public string? WhyHireYou { get; set; }

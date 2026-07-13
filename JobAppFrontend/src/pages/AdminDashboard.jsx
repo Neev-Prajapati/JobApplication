@@ -113,6 +113,17 @@ export default function AdminDashboard() {
     setIsModalOpen(true);
   };
 
+  const saveChangesAndClose = async () => {
+    if (!selectedApp) return;
+    
+    const originalApp = applications.find(a => a.id === selectedApp.id);
+    if (originalApp && originalApp.status !== selectedApp.status) {
+      await updateStatus(selectedApp.id, selectedApp.status);
+    }
+    
+    setIsModalOpen(false);
+  };
+
   const getStatusStyles = (status) => {
     switch(status) {
       case 'Shortlisted': return { bg: 'rgba(22, 163, 74, 0.15)', text: '#10b981', dot: '#10b981' };
@@ -124,6 +135,7 @@ export default function AdminDashboard() {
 
   const filteredApps = applications.filter(app => filterStatus === 'All' || app.status === filterStatus);
   const tabs = ['All', 'Raw', 'Reviewed', 'Shortlisted', 'Rejected'];
+  const relatedApps = selectedApp ? applications.filter(app => app.mobile === selectedApp.mobile) : [];
 
   return (
     <div className="admin-dashboard-container">
@@ -199,7 +211,12 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {filteredApps.map((app, index) => {
+              {filteredApps.reduce((acc, current) => {
+                if (!acc.find(app => app.mobile === current.mobile)) {
+                  acc.push(current);
+                }
+                return acc;
+              }, []).map((app, index) => {
                 const styleObj = getStatusStyles(app.status);
                 return (
                   <tr 
@@ -297,23 +314,46 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            {relatedApps.length > 1 && (
+              <div style={{ display: 'flex', gap: '10px', marginTop: '20px', flexWrap: 'wrap', paddingTop: '15px', borderTop: '1px solid var(--border)' }}>
+                {relatedApps.map((app, idx) => (
+                  <button 
+                    key={app.id} 
+                    onClick={() => setSelectedApp(app)}
+                    style={{ 
+                      padding: '8px 16px', 
+                      borderRadius: '4px', 
+                      border: 'none', 
+                      backgroundColor: selectedApp.id === app.id ? '#bf5700' : 'var(--code-bg)', 
+                      color: selectedApp.id === app.id ? 'white' : 'var(--text)', 
+                      cursor: 'pointer',
+                      fontWeight: selectedApp.id === app.id ? 'bold' : 'normal',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    Application {idx + 1} ({app.position})
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 <span style={{ fontWeight: '600', color: 'var(--text)', marginRight: '15px' }}>Status:</span>
                 <select 
-                  style={{ width: 'auto', padding: '10px 14px', backgroundColor: 'var(--code-bg)', color: 'var(--text-h)', fontWeight: 'bold', cursor: 'pointer', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '0.9rem', outline: 'none' }}
+                  style={{ width: 'auto', padding: '10px 14px', backgroundColor: getStatusStyles(selectedApp.status).bg, color: getStatusStyles(selectedApp.status).text, fontWeight: 'bold', cursor: 'pointer', border: `1px solid ${getStatusStyles(selectedApp.status).text}40`, borderRadius: '6px', fontSize: '0.9rem', outline: 'none' }}
                   value={selectedApp.status}
-                  onChange={(e) => updateStatus(selectedApp.id, e.target.value)}
+                  onChange={(e) => setSelectedApp({ ...selectedApp, status: e.target.value })}
                   disabled={statusUpdateLoading}
                 >
-                  <option value="Raw">Raw</option>
-                  <option value="Reviewed">Reviewed</option>
-                  <option value="Shortlisted">Shortlisted</option>
-                  <option value="Rejected">Rejected</option>
+                  <option value="Raw" style={{backgroundColor: 'var(--bg)', color: 'var(--text-h)'}}>Raw</option>
+                  <option value="Reviewed" style={{backgroundColor: 'var(--bg)', color: 'var(--text-h)'}}>Reviewed</option>
+                  <option value="Shortlisted" style={{backgroundColor: 'var(--bg)', color: 'var(--text-h)'}}>Shortlisted</option>
+                  <option value="Rejected" style={{backgroundColor: 'var(--bg)', color: 'var(--text-h)'}}>Rejected</option>
                 </select>
               </div>
               <button 
-                onClick={() => setIsModalOpen(false)}
+                onClick={saveChangesAndClose}
                 style={{ backgroundColor: '#bf5700', border: 'none', color: '#ffffff', padding: '10px 24px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s ease', fontSize: '0.9rem' }}
               >
                 Save

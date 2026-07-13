@@ -57,6 +57,8 @@ function App() {
   const handleAuthInputChange = (e) => setAuthForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   const handleRoleSelect = (role) => setFormData(prev => ({ ...prev, position: role }));
 
+  const formatEmpty = (val) => (!val || val === '0' || val === 0) ? 'empty' : val.toString();
+
   const submitApplication = async (tokenToUse = jwtToken) => {
     try {
       const response = await fetch('http://localhost:5086/api/application', {
@@ -65,10 +67,10 @@ function App() {
         body: JSON.stringify({
           position: formData.position, name: formData.name, mobile: formData.mobile, email: formData.email,
           fromState: formData.fromState, fromCity: formData.fromCity, basedState: formData.basedState, basedCity: formData.basedCity,
-          workExperienceYears: parseInt(formData.workExperienceYears) || 0, workExperienceMonths: parseInt(formData.workExperienceMonths) || 0,
-          isCurrentlyEmployed: formData.currentlyEmployed === 'Yes', employer: formData.lastEmployer || null,
-          salary: parseFloat(formData.lastSalary) || null, expectedSalary: parseFloat(formData.expectedSalary) || null,
-          joiningDate: formData.joiningDate, recentLearning: formData.recentLearning, whyHireYou: formData.whyHireYou
+          workExperienceYears: formatEmpty(formData.workExperienceYears), workExperienceMonths: formatEmpty(formData.workExperienceMonths),
+          isCurrentlyEmployed: formData.currentlyEmployed === 'Yes', employer: formData.lastEmployer || 'empty',
+          salary: formatEmpty(formData.lastSalary), expectedSalary: formatEmpty(formData.expectedSalary),
+          joiningDate: formData.joiningDate, recentLearning: formData.recentLearning || 'empty', whyHireYou: formData.whyHireYou || 'empty'
         })
       });
 
