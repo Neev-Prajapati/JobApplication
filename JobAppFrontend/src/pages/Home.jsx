@@ -20,6 +20,7 @@ function App() {
   
   const navigate = useNavigate();
   const [submitted, setSubmitted] = useState(false);
+  const [validationModalOpen, setValidationModalOpen] = useState(false);
   const [jwtToken, setJwtToken] = useState(localStorage.getItem('token') || null);
   const [isAdmin, setIsAdmin] = useState(false);
   
@@ -41,7 +42,7 @@ function App() {
         const decoded = jwtDecode(jwtToken);
         const role = decoded.role || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
         setIsAdmin(role === 'Admin');
-      } catch (e) { setIsAdmin(false); }
+      } catch (e) { setIsAdmin(false  ); }
     } else { setIsAdmin(false); }
   }, [jwtToken]);
   
@@ -49,7 +50,7 @@ function App() {
   const [authMode, setAuthMode] = useState('login');
   const [authForm, setAuthForm] = useState({ mobile: '', password: '', confirmPassword: '' });
   const [authError, setAuthError] = useState('');
-  const roles = ['Software Developer', 'Sales Executive', 'Digital Marketing', 'Customer Support', 'HR Manager'];
+  const roles = ['Sales Executive', 'Support Executive', 'Software Developer'];
 
   const handleInputChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   const handleAuthInputChange = (e) => setAuthForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -85,6 +86,10 @@ function App() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!formData.position || !e.target.checkValidity()) {
+      setValidationModalOpen(true);
+      return;
+    }
     if (!jwtToken) { setAuthMode('login'); setIsAuthModalOpen(true); } else { submitApplication(); }
   };
 
@@ -159,17 +164,15 @@ function App() {
         </div>
         <div className="header">
           <div className="logo-container">
-            <svg className="logo" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/>
-            </svg>
+            <img src="/logo.jpg" alt="Biziverse Logo" style={{ height: '60px', width: 'auto', objectFit: 'contain' }} />
           </div>
           <h1>Join Our Team</h1>
           <p>Apply to join our fast-growing company!</p>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           
           <div className="form-group">
-            <label className="form-label">Position *</label>
+            <label className="form-label">Position</label>
             <div className="chips-container">
               {roles.map(role => (
                 <button type="button" key={role} className={`chip ${formData.position === role ? 'active' : ''}`} onClick={() => handleRoleSelect(role)}>
@@ -181,57 +184,58 @@ function App() {
 
           <div className="form-row">
             <div className="form-col">
-              <label className="form-label">Your Name *</label>
-              <input type="text" name="name" className="form-control" value={formData.name} onChange={handleInputChange} required />
+              <label className="form-label">Your Name</label>
+              <input type="text" name="name" className="form-control" placeholder="Enter your name" value={formData.name} onChange={handleInputChange} required />
+            </div>
+            <div className="form-col"></div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-col">
+              <label className="form-label">Mobile Number</label>
+              <input type="tel" name="mobile" className="form-control" pattern="[0-9]{10}" maxLength="10" title="Please enter a 10 digit mobile number" value={formData.mobile} onChange={handleInputChange} required />
+            </div>
+            <div className="form-col">
+              <label className="form-label">Email Address</label>
+              <input type="email" name="email" className="form-control" placeholder="Enter your email" value={formData.email} onChange={handleInputChange} required />
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-col">
-              <label className="form-label">Mobile Number *</label>
-              <input type="tel" name="mobile" className="form-control" pattern="[0-9]{10}" title="Please enter a 10 digit mobile number" value={formData.mobile} onChange={handleInputChange} required />
-            </div>
-            <div className="form-col">
-              <label className="form-label">Email Address *</label>
-              <input type="email" name="email" className="form-control" value={formData.email} onChange={handleInputChange} required />
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-col">
-              <label className="form-label">Where are you from? *</label>
+              <label className="form-label">Where are you from?</label>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <select name="fromState" className="form-control" value={formData.fromState} onChange={handleInputChange} required>
                   <option value="" disabled>Select State</option>
                   {indianStates.map(state => <option key={state} value={state}>{state}</option>)}
                 </select>
-                <input type="text" name="fromCity" className="form-control" placeholder="City" value={formData.fromCity} onChange={handleInputChange} required />
+                <input type="text" name="fromCity" className="form-control" placeholder="Enter City" value={formData.fromCity} onChange={handleInputChange} required />
               </div>
             </div>
             <div className="form-col">
-              <label className="form-label">Where are you currently based? *</label>
+              <label className="form-label">Where are you currently based?</label>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <select name="basedState" className="form-control" value={formData.basedState} onChange={handleInputChange} required>
                   <option value="" disabled>Select State</option>
                   {indianStates.map(state => <option key={state} value={state}>{state}</option>)}
                 </select>
-                <input type="text" name="basedCity" className="form-control" placeholder="City" value={formData.basedCity} onChange={handleInputChange} required />
+                <input type="text" name="basedCity" className="form-control" placeholder="Enter City" value={formData.basedCity} onChange={handleInputChange} required />
               </div>
             </div>
           </div>
 
           <div className="form-row" style={{ gap: '40px' }}>
             <div className="form-col">
-              <label className="form-label">Work Experience *</label>
+              <label className="form-label">Work Experience</label>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <input type="number" name="workExperienceYears" className="form-control" placeholder="Years" min="0" max="50" value={formData.workExperienceYears} onChange={handleInputChange} required />
+                <input type="number" name="workExperienceYears" className="form-control" style={{ width: '100px' }} min="0" max="50" value={formData.workExperienceYears} onChange={handleInputChange} required />
                 <span className="input-suffix">years</span>
-                <input type="number" name="workExperienceMonths" className="form-control" placeholder="Months" min="0" max="11" value={formData.workExperienceMonths} onChange={handleInputChange} required />
+                <input type="number" name="workExperienceMonths" className="form-control" style={{ width: '100px' }} min="0" max="11" value={formData.workExperienceMonths} onChange={handleInputChange} required />
                 <span className="input-suffix">months</span>
               </div>
             </div>
             <div className="form-col">
-              <label className="form-label">Currently Employed? *</label>
+              <label className="form-label">Currently Employed?</label>
               <div className="radio-group">
                 <label className="radio-label">
                   <input type="radio" name="currentlyEmployed" value="Yes" checked={formData.currentlyEmployed === 'Yes'} onChange={handleInputChange} required /> Yes
@@ -262,32 +266,34 @@ function App() {
 
           <div className="form-row" style={{ gap: '40px' }}>
             <div className="form-col">
-              <label className="form-label">Expected Salary (Monthly) *</label>
+              <label className="form-label">Expected Salary</label>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <span className="input-prefix">₹</span>
-                <input type="number" name="expectedSalary" className="form-control" min="0" value={formData.expectedSalary} onChange={handleInputChange} required />
+                <input type="number" name="expectedSalary" className="form-control" style={{ width: '150px' }} min="0" value={formData.expectedSalary} onChange={handleInputChange} required />
                 <span className="input-suffix">/ month</span>
               </div>
             </div>
             <div className="form-col">
-              <label className="form-label">If selected, when can you join? *</label>
+              <label className="form-label">If selected, when can you join?</label>
               <input type="date" name="joiningDate" className="form-control" value={formData.joiningDate} onChange={handleInputChange} required />
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Tell us something that you learned on your own in the last month. *</label>
-            <textarea name="recentLearning" className="form-control" maxLength="200" value={formData.recentLearning} onChange={handleInputChange} required></textarea>
+            <label className="form-label">Tell us something that you learned on your own in the last month.</label>
+            <input type="text" name="recentLearning" className="form-control" maxLength="10000" value={formData.recentLearning} onChange={handleInputChange} required />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Why should we hire you? *</label>
-            <textarea name="whyHireYou" className="form-control" maxLength="200" value={formData.whyHireYou} onChange={handleInputChange} required></textarea>
+            <label className="form-label">Why should we hire you?</label>
+            <input type="text" name="whyHireYou" className="form-control" maxLength="10000" value={formData.whyHireYou} onChange={handleInputChange} required />
           </div>
 
-          <button type="submit" className="submit-btn" disabled={!formData.position}>
-            {jwtToken ? 'Submit Application' : 'Login to Submit Application'}
-          </button>
+          <div className="form-group" style={{ textAlign: 'left' }}>
+            <button type="submit" className="submit-btn">
+              {jwtToken ? 'Submit' : 'Submit'}
+            </button>
+          </div>
         </form>
       </div>
 
@@ -305,7 +311,7 @@ function App() {
             <form onSubmit={handleAuthSubmit}>
               <div className="form-group">
                 <label className="form-label">Mobile Number</label>
-                <input type="tel" name="mobile" className="form-control" pattern="[0-9]{10}" placeholder="10-digit number" value={authForm.mobile} onChange={handleAuthInputChange} required />
+                <input type="tel" name="mobile" className="form-control" pattern="[0-9]{10}" maxLength="10" placeholder="10-digit number" value={authForm.mobile} onChange={handleAuthInputChange} required />
               </div>
               <div className="form-group">
                 <label className="form-label">Password</label>
@@ -328,6 +334,22 @@ function App() {
               ) : (
                 <>Already have an account? <span onClick={() => { setAuthMode('login'); setAuthError(''); }}>Login</span></>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {validationModalOpen && (
+        <div className="modal-overlay" style={{ zIndex: 2000 }} onClick={() => setValidationModalOpen(false)}>
+          <div className="alert-modal" onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 15px 0', fontWeight: '400', fontSize: '20px', color: '#333' }}>Biziverse</h3>
+            <p style={{ margin: '0 0 25px 0', color: '#333', fontSize: '15px' }}>Please fill the form completely.</p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => setValidationModalOpen(false)}
+                style={{ background: '#e9ecef', border: 'none', padding: '8px 20px', borderRadius: '4px', fontWeight: 'bold', color: '#333', cursor: 'pointer', fontSize: '14px' }}
+              >
+                OK
+              </button>
             </div>
           </div>
         </div>

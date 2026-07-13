@@ -108,7 +108,7 @@ export default function AdminDashboard() {
     switch(status) {
       case 'Shortlisted': return { bg: 'rgba(22, 163, 74, 0.15)', text: '#10b981', dot: '#10b981' };
       case 'Rejected': return { bg: 'rgba(220, 38, 38, 0.15)', text: '#ef4444', dot: '#ef4444' };
-      case 'Reviewed': return { bg: 'rgba(59, 130, 246, 0.15)', text: '#3b82f6', dot: '#3b82f6' };
+      case 'Reviewed': return { bg: 'rgba(191, 87, 0, 0.15)', text: '#bf5700', dot: '#bf5700' };
       default: return { bg: 'rgba(115, 115, 115, 0.15)', text: '#737373', dot: '#737373' };
     }
   };
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
     <div className="admin-dashboard-container">
       <div className="dashboard-header">
         <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', fontSize: '2.2rem', fontWeight: '700', letterSpacing: '-0.02em' }}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '15px'}}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#bf5700" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '15px'}}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
           Admin Dashboard
         </h1>
         <div className="dashboard-actions">
@@ -145,14 +145,14 @@ export default function AdminDashboard() {
             style={{
               padding: '10px 24px',
               borderRadius: '999px',
-              border: filterStatus === tab ? '1px solid rgba(59, 130, 246, 0.5)' : '1px solid transparent',
+              border: filterStatus === tab ? '1px solid rgba(191, 87, 0, 0.5)' : '1px solid transparent',
               cursor: 'pointer',
               fontWeight: '600',
               fontSize: '0.95rem',
-              backgroundColor: filterStatus === tab ? 'rgba(59, 130, 246, 0.1)' : 'var(--code-bg)',
-              color: filterStatus === tab ? '#3b82f6' : 'var(--text)',
+              backgroundColor: filterStatus === tab ? 'rgba(191, 87, 0, 0.1)' : 'var(--code-bg)',
+              color: filterStatus === tab ? '#bf5700' : 'var(--text)',
               transition: 'all 0.2s ease',
-              boxShadow: filterStatus === tab ? '0 0 15px rgba(59, 130, 246, 0.15)' : 'none'
+              boxShadow: filterStatus === tab ? '0 0 15px rgba(191, 87, 0, 0.15)' : 'none'
             }}
           >
             {tab}
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '100px' }}>
-          <div className="status-dot" style={{ backgroundColor: '#3b82f6', transform: 'scale(1.5)' }}></div>
+          <div className="status-dot" style={{ backgroundColor: '#bf5700', transform: 'scale(1.5)' }}></div>
           <p style={{ marginTop: '20px', fontSize: '1.1rem', color: 'var(--text)' }}>Loading applications...</p>
         </div>
       ) : error ? (
@@ -272,7 +272,7 @@ export default function AdminDashboard() {
                   <div style={{ gridColumn: 'span 2' }}><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>{selectedApp.isCurrentlyEmployed ? 'Current' : 'Last'} Employer</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.employer}</p></div>
                 )}
                 <div><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>Current Salary</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.salary ? `₹${selectedApp.salary} / mo` : 'N/A'}</p></div>
-                <div><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>Expected Salary</p><p style={{ margin: 0, fontWeight: 'bold', color: '#3b82f6', fontSize: '1.05rem' }}>₹{selectedApp.expectedSalary} <span style={{fontSize:'0.8rem', fontWeight:'normal', color:'var(--text)'}}>/ mo</span></p></div>
+                <div><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>Expected Salary</p><p style={{ margin: 0, fontWeight: 'bold', color: '#bf5700', fontSize: '1.05rem' }}>₹{selectedApp.expectedSalary} <span style={{fontSize:'0.8rem', fontWeight:'normal', color:'var(--text)'}}>/ mo</span></p></div>
               </div>
 
               <div>

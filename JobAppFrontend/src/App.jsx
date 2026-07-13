@@ -11,7 +11,7 @@ function App() {
     <BrowserRouter>
       <Suspense fallback={
         <div style={{ textAlign: 'center', padding: '100px', color: 'var(--text)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div className="status-dot" style={{ backgroundColor: '#3b82f6', transform: 'scale(1.5)', marginBottom: '15px' }}></div>
+          <div className="status-dot" style={{ backgroundColor: '#bf5700', transform: 'scale(1.5)', marginBottom: '15px' }}></div>
           Loading Application...
         </div>
       }>

@@ -4,14 +4,14 @@
   --bg: #fff;
   --border: #e5e4e7;
   --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
+  --accent: #bf5700;
+  --accent-bg: rgba(191, 87, 0, 0.1);
+  --accent-border: rgba(191, 87, 0, 0.5);
   --social-bg: rgba(244, 243, 236, 0.5);
   --shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --sans: "Open Sans", sans-serif;
+  --heading: "Open Sans", sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 18px/145% var(--sans);
@@ -36,9 +36,9 @@
   --bg: #050505;
   --border: #262626;
   --code-bg: #171717;
-  --accent: #3b82f6;
-  --accent-bg: rgba(59, 130, 246, 0.15);
-  --accent-border: rgba(59, 130, 246, 0.5);
+  --accent: #bf5700;
+  --accent-bg: rgba(191, 87, 0, 0.15);
+  --accent-border: rgba(191, 87, 0, 0.5);
   --social-bg: rgba(23, 23, 23, 0.5);
   --shadow: rgba(0, 0, 0, 0.8) 0 20px 40px -10px, rgba(0, 0, 0, 0.5) 0 4px 6px -2px;
   color-scheme: dark;
