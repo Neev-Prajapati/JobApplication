@@ -127,11 +127,20 @@ export default function AdminDashboard() {
     }
   };
 
+  const cleanDisplay = (val) => {
+    if (!val) return '';
+    const str = String(val).trim();
+    if (str.toLowerCase() === 'empty' || str.toLowerCase() === 'null') {
+      return '';
+    }
+    return str;
+  };
+
   const renderExperience = (years, months, format = 'short') => {
-    const isYEmpty = !years || years === '0' || String(years).toLowerCase() === 'empty';
+    const isYEmpty = !years || years === '0' || String(years).toLowerCase() === 'empty' || String(years).toLowerCase() === 'null';
     const cleanMonths = (!months || String(months).toLowerCase() === 'empty' || months === 'null') ? '0' : String(months);
     
-    if (isYEmpty && cleanMonths === '0') return 'None';
+    if (isYEmpty && cleanMonths === '0') return '';
     
     if (format === 'short') {
       const yStr = isYEmpty ? '' : `${years}y`;
@@ -349,10 +358,10 @@ export default function AdminDashboard() {
                 gap: '20px'
               }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Email Address</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.email}</p></div>
-                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Mobile Number</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.mobile}</p></div>
-                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Current Location</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.basedCity}, {selectedApp.basedState}</p></div>
-                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Hometown</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.fromCity}, {selectedApp.fromState}</p></div>
+                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Email Address</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{cleanDisplay(selectedApp.email)}</p></div>
+                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Mobile Number</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{cleanDisplay(selectedApp.mobile)}</p></div>
+                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Current Location</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{[cleanDisplay(selectedApp.basedCity), cleanDisplay(selectedApp.basedState)].filter(Boolean).join(', ')}</p></div>
+                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Hometown</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{[cleanDisplay(selectedApp.fromCity), cleanDisplay(selectedApp.fromState)].filter(Boolean).join(', ')}</p></div>
                 </div>
 
                 <div style={{ borderTop: '1px solid var(--border)', paddingTop: '5px' }}></div>
@@ -360,11 +369,11 @@ export default function AdminDashboard() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                   <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Experience</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{renderExperience(selectedApp.workExperienceYears, selectedApp.workExperienceMonths, 'long')}</p></div>
                   <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Employment</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.isCurrentlyEmployed ? 'Employed' : 'Unemployed'}</p></div>
-                  {(selectedApp.employer && selectedApp.employer !== 'empty') && (
-                    <div style={{ gridColumn: 'span 2' }}><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>{selectedApp.isCurrentlyEmployed ? 'Current' : 'Last'} Employer</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.employer}</p></div>
+                  {cleanDisplay(selectedApp.employer) && (
+                    <div style={{ gridColumn: 'span 2' }}><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>{selectedApp.isCurrentlyEmployed ? 'Current' : 'Last'} Employer</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{cleanDisplay(selectedApp.employer)}</p></div>
                   )}
-                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Current Salary</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{(!selectedApp.salary || selectedApp.salary === 'empty' || selectedApp.salary === '0') ? 'N/A' : `₹${selectedApp.salary} / mo`}</p></div>
-                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Expected Salary</p><p style={{ margin: 0, fontWeight: 'bold', color: '#bf5700', fontSize: '1.05rem' }}>{(!selectedApp.expectedSalary || selectedApp.expectedSalary === 'empty' || selectedApp.expectedSalary === '0') ? 'N/A' : <span>₹{selectedApp.expectedSalary} <span style={{fontSize:'0.8rem', fontWeight:'normal', color:'var(--text)'}}>/ mo</span></span>}</p></div>
+                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Current Salary</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{!cleanDisplay(selectedApp.salary) || cleanDisplay(selectedApp.salary) === '0' ? '' : `₹${cleanDisplay(selectedApp.salary)} / mo`}</p></div>
+                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Expected Salary</p><p style={{ margin: 0, fontWeight: 'bold', color: '#bf5700', fontSize: '1.05rem' }}>{!cleanDisplay(selectedApp.expectedSalary) || cleanDisplay(selectedApp.expectedSalary) === '0' ? '' : <span>₹{cleanDisplay(selectedApp.expectedSalary)} <span style={{fontSize:'0.8rem', fontWeight:'normal', color:'var(--text)'}}>/ mo</span></span>}</p></div>
                 </div>
               </div>
 
@@ -381,13 +390,13 @@ export default function AdminDashboard() {
                 <div>
                   <p style={{ fontSize: '13px', color: '#333333', margin: '0 0 8px 0', fontWeight: '600' }}>Recent Learning</p>
                   <div style={{ padding: '16px', borderRadius: '8px', fontSize: '0.95rem', border: '1px solid var(--border)', backgroundColor: 'var(--bg)', color: 'var(--text-h)', lineHeight: '1.6', fontStyle: 'italic' }}>
-                    "{selectedApp.recentLearning}"
+                    "{cleanDisplay(selectedApp.recentLearning)}"
                   </div>
                 </div>
                 <div>
                   <p style={{ fontSize: '13px', color: '#333333', margin: '0 0 8px 0', fontWeight: '600' }}>Why should we hire you?</p>
                   <div style={{ padding: '16px', borderRadius: '8px', fontSize: '0.95rem', border: '1px solid var(--border)', backgroundColor: 'var(--bg)', color: 'var(--text-h)', lineHeight: '1.6', fontStyle: 'italic' }}>
-                    "{selectedApp.whyHireYou}"
+                    "{cleanDisplay(selectedApp.whyHireYou)}"
                   </div>
                 </div>
               </div>
