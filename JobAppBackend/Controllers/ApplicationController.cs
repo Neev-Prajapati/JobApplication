@@ -291,5 +291,56 @@ namespace JobAppBackend.Controllers
                 return StatusCode(500, new { message = "An error occurred while submitting the application.", details = ex.Message });
             }
         }
+
+        [HttpGet("my")]
+        [Authorize]
+        public async Task<IActionResult> GetMyApplications()
+        {
+            try
+            {
+                var mobileClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                if (mobileClaim == null) return Unauthorized(new { message = "User identification missing in token." });
+                string userMobile = mobileClaim.Value;
+
+                string connectionString = _configuration.GetConnectionString("DefaultConnection") ?? "";
+                var applications = new List<object>();
+
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+                    string sql = @"
+                        SELECT Id, Position, Name, Mobile, Email, Status, SubmittedAt
+                        FROM Applications
+                        WHERE Mobile = @Mobile
+                        ORDER BY SubmittedAt DESC";
+
+                    using (SqlCommand command = new SqlCommand(sql, connection))
+                    {
+                        command.Parameters.AddWithValue("@Mobile", userMobile);
+                        using (SqlDataReader reader = await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                applications.Add(new
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                    Position = reader.GetString(reader.GetOrdinal("Position")),
+                                    Name = reader.GetString(reader.GetOrdinal("Name")),
+                                    Mobile = reader.GetString(reader.GetOrdinal("Mobile")),
+                                    Email = reader.GetString(reader.GetOrdinal("Email")),
+                                    Status = reader.IsDBNull(reader.GetOrdinal("Status")) ? "Raw" : reader.GetString(reader.GetOrdinal("Status")),
+                                    CreatedAt = reader.GetDateTime(reader.GetOrdinal("SubmittedAt"))
+                                });
+                            }
+                        }
+                    }
+                }
+                return Ok(applications);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error fetching your applications.", details = ex.Message });
+            }
+        }
     }
 }
