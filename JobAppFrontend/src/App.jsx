@@ -3,8 +3,9 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import './App.css';
 
-// Lazy load the AdminDashboard to reduce initial bundle size for regular users
+// Lazy load to reduce initial bundle size
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const UserDashboard = lazy(() => import('./pages/UserDashboard'));
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/dashboard" element={<UserDashboard />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

@@ -208,7 +208,13 @@ function App() {
         try {
           const decoded = jwtDecode(token);
           const role = decoded.role || decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-          if (role === 'Admin') { navigate('/admin'); return; }
+          if (role === 'Admin') { 
+            navigate('/admin'); 
+            return; 
+          } else {
+            navigate('/dashboard');
+            return;
+          }
         } catch(e) {}
         
         setIsAuthModalOpen(false); setAuthForm({ mobile: '', password: '', confirmPassword: '' });
@@ -249,10 +255,15 @@ function App() {
   return (
     <>
       <div className="app-container">
-        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px', gap: '10px' }}>
           {isAdmin && (
-            <button className="chip active" style={{ padding: '8px 16px', marginRight: '16px' }} onClick={() => navigate('/admin')}>
-              Dashboard
+            <button className="chip active" style={{ padding: '8px 16px', backgroundColor: '#bf5700', color: '#ffffff' }} onClick={() => navigate('/admin')}>
+              Admin Dashboard
+            </button>
+          )}
+          {jwtToken && (
+            <button className="chip active" style={{ padding: '8px 16px' }} onClick={() => navigate('/dashboard')}>
+              User Dashboard
             </button>
           )}
           {jwtToken ? (

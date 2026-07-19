@@ -166,7 +166,10 @@ export default function AdminDashboard() {
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#bf5700" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: '15px'}}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
           Admin Dashboard
         </h1>
-        <div className="dashboard-actions">
+        <div className="dashboard-actions" style={{ display: 'flex', gap: '10px' }}>
+          <button className="chip active" style={{ padding: '10px 20px', margin: 0, backgroundColor: '#bf5700', color: '#ffffff' }} onClick={() => navigate('/dashboard')}>
+            User Dashboard
+          </button>
           <button className="chip btn-secondary" style={{ padding: '10px 20px', margin: 0 }} onClick={() => navigate('/')}>
             Return to Website
           </button>
