@@ -8,17 +8,11 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Theme Toggle State
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
-
+  // Set theme to light always
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-  };
+    document.documentElement.setAttribute('data-theme', 'light');
+    localStorage.setItem('theme', 'light');
+  }, []);
 
   // Filtering
   const [filterStatus, setFilterStatus] = useState('All');
@@ -135,17 +129,17 @@ export default function AdminDashboard() {
 
   const renderExperience = (years, months, format = 'short') => {
     const isYEmpty = !years || years === '0' || String(years).toLowerCase() === 'empty';
-    const isMEmpty = !months || months === '0' || String(months).toLowerCase() === 'empty';
+    const cleanMonths = (!months || String(months).toLowerCase() === 'empty' || months === 'null') ? '0' : String(months);
     
-    if (isYEmpty && isMEmpty) return 'None';
+    if (isYEmpty && cleanMonths === '0') return 'None';
     
     if (format === 'short') {
       const yStr = isYEmpty ? '' : `${years}y`;
-      const mStr = isMEmpty ? '' : `${months}m`;
+      const mStr = `${cleanMonths}m`;
       return [yStr, mStr].filter(Boolean).join(' ');
     } else {
       const yStr = isYEmpty ? '' : `${years} Years`;
-      const mStr = isMEmpty ? '' : `${months} Months`;
+      const mStr = `${cleanMonths} Months`;
       return [yStr, mStr].filter(Boolean).join(', ');
     }
   };
@@ -153,6 +147,8 @@ export default function AdminDashboard() {
   const filteredApps = applications.filter(app => filterStatus === 'All' || app.status === filterStatus);
   const tabs = ['All', 'Raw', 'Reviewed', 'Shortlisted', 'Rejected'];
   const relatedApps = selectedApp ? applications.filter(app => app.mobile === selectedApp.mobile) : [];
+  const originalApp = selectedApp ? applications.find(a => a.id === selectedApp.id) : null;
+  const displayStatus = originalApp ? originalApp.status : (selectedApp ? selectedApp.status : 'Raw');
 
   return (
     <div className="admin-dashboard-container">
@@ -164,13 +160,6 @@ export default function AdminDashboard() {
         <div className="dashboard-actions">
           <button className="chip btn-secondary" style={{ padding: '10px 20px', margin: 0 }} onClick={() => navigate('/')}>
             Return to Website
-          </button>
-          <button className="theme-toggle-btn" onClick={toggleTheme} title="Toggle Theme">
-            {theme === 'dark' ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-            )}
           </button>
         </div>
       </div>
@@ -284,101 +273,156 @@ export default function AdminDashboard() {
                 </h2>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                   <p style={{ margin: 0, color: 'var(--text)', fontSize: '1.05rem' }}>{selectedApp.position}</p>
-                  <span style={{ padding: '4px 12px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: '700', color: getStatusStyles(selectedApp.status).text, backgroundColor: getStatusStyles(selectedApp.status).bg }}>
-                    {selectedApp.status}
+                  <span style={{ padding: '4px 12px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: '700', color: getStatusStyles(displayStatus).text, backgroundColor: getStatusStyles(displayStatus).bg }}>
+                    {displayStatus}
                   </span>
                 </div>
               </div>
 
-              <button 
-                onClick={() => requestDelete(selectedApp.id)}
-                style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', padding: 0 }}
-              >
-                Delete
-              </button>
-            </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              
-              <div className="details-grid">
-                <div><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>Email Address</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.email}</p></div>
-                <div><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>Mobile Number</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.mobile}</p></div>
-                <div><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>Current Location</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.basedCity}, {selectedApp.basedState}</p></div>
-                <div><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>Hometown</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.fromCity}, {selectedApp.fromState}</p></div>
-              </div>
-
-              <div className="details-grid">
-                <div><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>Experience</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{renderExperience(selectedApp.workExperienceYears, selectedApp.workExperienceMonths, 'long')}</p></div>
-                <div><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>Employment</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.isCurrentlyEmployed ? 'Employed' : 'Unemployed'}</p></div>
-                {(selectedApp.employer && selectedApp.employer !== 'empty') && (
-                  <div style={{ gridColumn: 'span 2' }}><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>{selectedApp.isCurrentlyEmployed ? 'Current' : 'Last'} Employer</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.employer}</p></div>
-                )}
-                <div><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>Current Salary</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{(!selectedApp.salary || selectedApp.salary === 'empty' || selectedApp.salary === '0') ? 'N/A' : `₹${selectedApp.salary} / mo`}</p></div>
-                <div><p style={{ fontSize: '0.8rem', color: 'var(--text)', margin: '0 0 4px 0', textTransform: 'uppercase' }}>Expected Salary</p><p style={{ margin: 0, fontWeight: 'bold', color: '#bf5700', fontSize: '1.05rem' }}>{(!selectedApp.expectedSalary || selectedApp.expectedSalary === 'empty' || selectedApp.expectedSalary === '0') ? 'N/A' : <span>₹{selectedApp.expectedSalary} <span style={{fontSize:'0.8rem', fontWeight:'normal', color:'var(--text)'}}>/ mo</span></span>}</p></div>
-              </div>
-
-              <div>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text)', margin: '0 0 8px 0', fontWeight: '600' }}>Recent Learning</p>
-                <div style={{ padding: '16px', borderRadius: '8px', fontSize: '0.95rem', border: '1px solid var(--border)', backgroundColor: 'var(--code-bg)', color: 'var(--text-h)', lineHeight: '1.6', fontStyle: 'italic' }}>
-                  "{selectedApp.recentLearning}"
-                </div>
-              </div>
-              <div>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text)', margin: '0 0 8px 0', fontWeight: '600' }}>Why should we hire you?</p>
-                <div style={{ padding: '16px', borderRadius: '8px', fontSize: '0.95rem', border: '1px solid var(--border)', backgroundColor: 'var(--code-bg)', color: 'var(--text-h)', lineHeight: '1.6', fontStyle: 'italic' }}>
-                  "{selectedApp.whyHireYou}"
-                </div>
-              </div>
-              
-              <div>
-                <p style={{ fontSize: '0.85rem', color: '#bf5700', margin: '0 0 8px 0', fontWeight: '700' }}>Admin Notes (Interview / Comments)</p>
-                <textarea 
-                  style={{ width: '100%', minHeight: '100px', padding: '12px', borderRadius: '8px', fontSize: '0.95rem', border: '1px solid var(--border)', backgroundColor: 'var(--bg)', color: 'var(--text-h)', resize: 'vertical', fontFamily: 'inherit', outline: 'none' }}
-                  placeholder="Add your notes about this applicant here..."
-                  value={selectedApp.adminNotes || ''}
-                  onChange={(e) => setSelectedApp({ ...selectedApp, adminNotes: e.target.value })}
-                />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <button 
+                  onClick={() => requestDelete(selectedApp.id)}
+                  style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  title="Delete Application"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
+                </button>
+                
+                <button 
+                  onClick={() => setIsModalOpen(false)}
+                  style={{ background: 'none', border: 'none', color: '#6c757d', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  title="Close Details"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
               </div>
             </div>
 
             {relatedApps.length > 1 && (
-              <div style={{ display: 'flex', gap: '10px', marginTop: '20px', flexWrap: 'wrap', paddingTop: '15px', borderTop: '1px solid var(--border)' }}>
-                {relatedApps.map((app, idx) => (
-                  <button 
-                    key={app.id} 
-                    onClick={() => setSelectedApp(app)}
-                    style={{ 
-                      padding: '8px 16px', 
-                      borderRadius: '4px', 
-                      border: 'none', 
-                      backgroundColor: selectedApp.id === app.id ? '#bf5700' : 'var(--code-bg)', 
-                      color: selectedApp.id === app.id ? 'white' : 'var(--text)', 
-                      cursor: 'pointer',
-                      fontWeight: selectedApp.id === app.id ? 'bold' : 'normal',
-                      fontSize: '0.85rem'
-                    }}
-                  >
-                    Application {idx + 1} ({app.position})
-                  </button>
-                ))}
-              </div>
-            )}
-
-            <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{ fontWeight: '600', color: 'var(--text)', marginRight: '15px' }}>Status:</span>
-                <select 
-                  style={{ width: 'auto', padding: '10px 14px', backgroundColor: getStatusStyles(selectedApp.status).bg, color: getStatusStyles(selectedApp.status).text, fontWeight: 'bold', cursor: 'pointer', border: `1px solid ${getStatusStyles(selectedApp.status).text}40`, borderRadius: '6px', fontSize: '0.9rem', outline: 'none' }}
-                  value={selectedApp.status}
-                  onChange={(e) => setSelectedApp({ ...selectedApp, status: e.target.value })}
-                  disabled={statusUpdateLoading}
+              <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontWeight: '600', color: '#333333', fontSize: '13px' }}>Select Application:</span>
+                <select
+                  style={{ 
+                    padding: '8px 12px', 
+                    borderRadius: '6px', 
+                    border: '1px solid var(--border)', 
+                    backgroundColor: 'var(--bg)', 
+                    color: 'var(--text-h)', 
+                    fontSize: '0.9rem',
+                    outline: 'none',
+                    cursor: 'pointer',
+                    fontWeight: '600'
+                  }}
+                  value={selectedApp.id}
+                  onChange={(e) => {
+                    const nextApp = relatedApps.find(a => a.id === parseInt(e.target.value));
+                    if (nextApp) setSelectedApp(nextApp);
+                  }}
                 >
-                  <option value="Raw" style={{backgroundColor: 'var(--bg)', color: 'var(--text-h)'}}>Raw</option>
-                  <option value="Reviewed" style={{backgroundColor: 'var(--bg)', color: 'var(--text-h)'}}>Reviewed</option>
-                  <option value="Shortlisted" style={{backgroundColor: 'var(--bg)', color: 'var(--text-h)'}}>Shortlisted</option>
-                  <option value="Rejected" style={{backgroundColor: 'var(--bg)', color: 'var(--text-h)'}}>Rejected</option>
+                  {relatedApps.map((app, idx) => (
+                    <option key={app.id} value={app.id}>
+                      Application {idx + 1} ({app.position})
+                    </option>
+                  ))}
                 </select>
               </div>
+            )}
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              {/* Wrapper container for both detail blocks, styled as a box */}
+              <div style={{ 
+                border: '1px solid var(--border)', 
+                borderRadius: '8px', 
+                padding: '20px', 
+                backgroundColor: 'var(--code-bg)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '20px'
+              }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Email Address</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.email}</p></div>
+                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Mobile Number</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.mobile}</p></div>
+                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Current Location</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.basedCity}, {selectedApp.basedState}</p></div>
+                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Hometown</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.fromCity}, {selectedApp.fromState}</p></div>
+                </div>
+
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '5px' }}></div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Experience</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{renderExperience(selectedApp.workExperienceYears, selectedApp.workExperienceMonths, 'long')}</p></div>
+                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Employment</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.isCurrentlyEmployed ? 'Employed' : 'Unemployed'}</p></div>
+                  {(selectedApp.employer && selectedApp.employer !== 'empty') && (
+                    <div style={{ gridColumn: 'span 2' }}><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>{selectedApp.isCurrentlyEmployed ? 'Current' : 'Last'} Employer</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{selectedApp.employer}</p></div>
+                  )}
+                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Current Salary</p><p style={{ margin: 0, fontWeight: '500', color: 'var(--text-h)' }}>{(!selectedApp.salary || selectedApp.salary === 'empty' || selectedApp.salary === '0') ? 'N/A' : `₹${selectedApp.salary} / mo`}</p></div>
+                  <div><p style={{ fontSize: '13px', color: '#333333', margin: '0 0 4px 0', textTransform: 'uppercase', fontWeight: '600' }}>Expected Salary</p><p style={{ margin: 0, fontWeight: 'bold', color: '#bf5700', fontSize: '1.05rem' }}>{(!selectedApp.expectedSalary || selectedApp.expectedSalary === 'empty' || selectedApp.expectedSalary === '0') ? 'N/A' : <span>₹{selectedApp.expectedSalary} <span style={{fontSize:'0.8rem', fontWeight:'normal', color:'var(--text)'}}>/ mo</span></span>}</p></div>
+                </div>
+              </div>
+
+              {/* Wrapper container for recent learning and why should we hire you, styled as a box */}
+              <div style={{ 
+                border: '1px solid var(--border)', 
+                borderRadius: '8px', 
+                padding: '20px', 
+                backgroundColor: 'var(--code-bg)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '20px'
+              }}>
+                <div>
+                  <p style={{ fontSize: '13px', color: '#333333', margin: '0 0 8px 0', fontWeight: '600' }}>Recent Learning</p>
+                  <div style={{ padding: '16px', borderRadius: '8px', fontSize: '0.95rem', border: '1px solid var(--border)', backgroundColor: 'var(--bg)', color: 'var(--text-h)', lineHeight: '1.6', fontStyle: 'italic' }}>
+                    "{selectedApp.recentLearning}"
+                  </div>
+                </div>
+                <div>
+                  <p style={{ fontSize: '13px', color: '#333333', margin: '0 0 8px 0', fontWeight: '600' }}>Why should we hire you?</p>
+                  <div style={{ padding: '16px', borderRadius: '8px', fontSize: '0.95rem', border: '1px solid var(--border)', backgroundColor: 'var(--bg)', color: 'var(--text-h)', lineHeight: '1.6', fontStyle: 'italic' }}>
+                    "{selectedApp.whyHireYou}"
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Status Selection Row */}
+            <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+              <span style={{ fontWeight: '600', color: 'var(--text)', marginRight: '15px' }}>Status:</span>
+              <select 
+                style={{ width: 'auto', padding: '10px 14px', backgroundColor: getStatusStyles(selectedApp.status).bg, color: getStatusStyles(selectedApp.status).text, fontWeight: 'bold', cursor: 'pointer', border: `1px solid ${getStatusStyles(selectedApp.status).text}40`, borderRadius: '6px', fontSize: '0.9rem', outline: 'none' }}
+                value={selectedApp.status}
+                onChange={(e) => setSelectedApp({ ...selectedApp, status: e.target.value })}
+                disabled={statusUpdateLoading}
+              >
+                <option value="Raw" style={{backgroundColor: 'var(--bg)', color: 'var(--text-h)'}}>Raw</option>
+                <option value="Reviewed" style={{backgroundColor: 'var(--bg)', color: 'var(--text-h)'}}>Reviewed</option>
+                <option value="Shortlisted" style={{backgroundColor: 'var(--bg)', color: 'var(--text-h)'}}>Shortlisted</option>
+                <option value="Rejected" style={{backgroundColor: 'var(--bg)', color: 'var(--text-h)'}}>Rejected</option>
+              </select>
+            </div>
+
+            {/* Admin Notes below status selection */}
+            <div style={{ marginTop: '20px' }}>
+              <p style={{ fontSize: '13px', color: '#333333', margin: '0 0 8px 0', fontWeight: '600' }}>Admin Notes (Interview / Comments)</p>
+              <textarea 
+                style={{ width: '100%', minHeight: '100px', padding: '12px', borderRadius: '8px', fontSize: '0.95rem', border: '1px solid var(--border)', backgroundColor: 'var(--bg)', color: 'var(--text-h)', resize: 'vertical', fontFamily: 'inherit', outline: 'none' }}
+                placeholder="Add your notes about this applicant here..."
+                value={selectedApp.adminNotes || ''}
+                onChange={(e) => setSelectedApp({ ...selectedApp, adminNotes: e.target.value })}
+              />
+            </div>
+
+            {/* Save Button at the very bottom left */}
+            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-start' }}>
               <button 
                 onClick={saveChangesAndClose}
                 style={{ backgroundColor: '#bf5700', border: 'none', color: '#ffffff', padding: '10px 24px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s ease', fontSize: '0.9rem' }}
@@ -386,6 +430,7 @@ export default function AdminDashboard() {
                 Save
               </button>
             </div>
+
           </div>
         </div>
       )}

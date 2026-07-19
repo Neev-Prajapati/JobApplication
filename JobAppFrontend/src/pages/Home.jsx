@@ -11,6 +11,21 @@ const indianStates = [
   "Dadra and Nagar Haveli and Daman and Diu", "Lakshadweep", "Delhi", "Puducherry"
 ];
 
+const CHARACTER_LIMITS = {
+  name: 50,
+  lastEmployer: 80,
+  recentLearning: 500,
+  whyHireYou: 500
+};
+
+const getTodayDateString = () => {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 function App() {
   const [formData, setFormData] = useState({
     position: '', name: '', mobile: '', email: '', fromState: '', fromCity: '', basedState: '', basedCity: '',
@@ -25,17 +40,11 @@ function App() {
   const [jwtToken, setJwtToken] = useState(localStorage.getItem('token') || null);
   const [isAdmin, setIsAdmin] = useState(false);
   
-  // Theme Toggle State
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
-
+  // Set theme to light always
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-  };
+    document.documentElement.setAttribute('data-theme', 'light');
+    localStorage.setItem('theme', 'light');
+  }, []);
 
   useEffect(() => {
     if (jwtToken) {
@@ -53,8 +62,31 @@ function App() {
   const [authError, setAuthError] = useState('');
   const roles = ['Sales Executive', 'Support Executive', 'Software Developer'];
 
-  const handleInputChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  const handleAuthInputChange = (e) => setAuthForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'mobile') {
+      const filtered = value.replace(/[^0-9]/g, '');
+      setFormData(prev => ({ ...prev, mobile: filtered }));
+      return;
+    }
+    if (name === 'expectedSalary') {
+      const filtered = value.replace(/[^0-9]/g, '').slice(0, 10);
+      setFormData(prev => ({ ...prev, expectedSalary: filtered }));
+      return;
+    }
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleAuthInputChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'mobile') {
+      const filtered = value.replace(/[^0-9]/g, '');
+      setAuthForm(prev => ({ ...prev, mobile: filtered }));
+      return;
+    }
+    setAuthForm(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleRoleSelect = (role) => setFormData(prev => ({ ...prev, position: role }));
 
   const formatEmpty = (val) => (!val || val === '0' || val === 0) ? 'empty' : val.toString();
@@ -67,7 +99,7 @@ function App() {
         body: JSON.stringify({
           position: formData.position, name: formData.name, mobile: formData.mobile, email: formData.email,
           fromState: formData.fromState, fromCity: formData.fromCity, basedState: formData.basedState, basedCity: formData.basedCity,
-          workExperienceYears: formatEmpty(formData.workExperienceYears), workExperienceMonths: formatEmpty(formData.workExperienceMonths),
+          workExperienceYears: formatEmpty(formData.workExperienceYears), workExperienceMonths: (!formData.workExperienceMonths || formData.workExperienceMonths === '0') ? '0' : formData.workExperienceMonths.toString(),
           isCurrentlyEmployed: formData.currentlyEmployed === 'Yes', employer: formData.lastEmployer || 'empty',
           salary: formatEmpty(formData.lastSalary), expectedSalary: formatEmpty(formData.expectedSalary),
           joiningDate: formData.joiningDate, recentLearning: formData.recentLearning || 'empty', whyHireYou: formData.whyHireYou || 'empty'
@@ -95,11 +127,54 @@ function App() {
       setValidationModalOpen(true);
       return;
     }
+
+    if ((formData.name || '').length > CHARACTER_LIMITS.name) {
+      setValidationMessage(`Name cannot exceed ${CHARACTER_LIMITS.name} characters.`);
+      setValidationModalOpen(true);
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email || !emailRegex.test(formData.email)) {
+      setValidationMessage("Please enter a valid Email");
+      setValidationModalOpen(true);
+      return;
+    }
+
+    if (formData.lastEmployer && (formData.lastEmployer || '').length > CHARACTER_LIMITS.lastEmployer) {
+      setValidationMessage(`Employer name cannot exceed ${CHARACTER_LIMITS.lastEmployer} characters.`);
+      setValidationModalOpen(true);
+      return;
+    }
+
+    if (!/^\d{1,10}$/.test(formData.expectedSalary)) {
+      setValidationMessage("Expected salary must be only digits and maximum 10 digits.");
+      setValidationModalOpen(true);
+      return;
+    }
+
+    const todayStr = getTodayDateString();
+    if (formData.joiningDate && formData.joiningDate < todayStr) {
+      setValidationMessage("Joining date cannot be in the past.");
+      setValidationModalOpen(true);
+      return;
+    }
+
+    if ((formData.recentLearning || '').length > CHARACTER_LIMITS.recentLearning) {
+      setValidationMessage(`Past Projects / Recent Learning response cannot exceed ${CHARACTER_LIMITS.recentLearning} characters.`);
+      setValidationModalOpen(true);
+      return;
+    }
+
+    if ((formData.whyHireYou || '').length > CHARACTER_LIMITS.whyHireYou) {
+      setValidationMessage(`'Why should we hire you?' response cannot exceed ${CHARACTER_LIMITS.whyHireYou} characters.`);
+      setValidationModalOpen(true);
+      return;
+    }
     
     if (!e.target.checkValidity()) {
       const invalidElement = e.target.querySelector(':invalid');
       if (invalidElement && invalidElement.validationMessage) {
-        // e.g. "Value must be less than or equal to 50"
         setValidationMessage(invalidElement.validationMessage);
       } else {
         setValidationMessage("Please fill out all required fields correctly.");
@@ -153,7 +228,20 @@ function App() {
           <div className="success-icon">✓</div>
           <h2>Application Submitted!</h2>
           <p>Thank you for applying. We will get back to you shortly.</p>
-          <button className="submit-btn" onClick={() => setSubmitted(false)}>Submit Another Application</button>
+          <button 
+            className="submit-btn" 
+            style={{ margin: '20px auto 0 auto' }} 
+            onClick={() => {
+              setFormData({
+                position: '', name: '', mobile: '', email: '', fromState: '', fromCity: '', basedState: '', basedCity: '',
+                workExperienceYears: '', workExperienceMonths: '', currentlyEmployed: '', lastEmployer: '', lastSalary: '',
+                expectedSalary: '', joiningDate: '', recentLearning: '', whyHireYou: ''
+              });
+              setSubmitted(false);
+            }}
+          >
+            Submit Another Application
+          </button>
         </div>
       </div>
     );
@@ -172,13 +260,6 @@ function App() {
           ) : (
             <button className="chip btn-secondary" onClick={() => setIsAuthModalOpen(true)}>Login / Sign Up</button>
           )}
-          <button className="theme-toggle-btn" onClick={toggleTheme} title="Toggle Theme">
-            {theme === 'dark' ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-            )}
-          </button>
         </div>
         <div className="header">
           <div className="logo-container">
@@ -203,7 +284,32 @@ function App() {
           <div className="form-row">
             <div className="form-col">
               <label className="form-label">Your Name</label>
-              <input type="text" name="name" className="form-control" placeholder="Enter your name" value={formData.name} onChange={handleInputChange} required />
+              <div style={{ position: 'relative' }}>
+                <input 
+                  type="text" 
+                  name="name" 
+                  className="form-control" 
+                  placeholder="Enter your name" 
+                  maxLength={CHARACTER_LIMITS.name}
+                  value={formData.name} 
+                  onChange={handleInputChange} 
+                  required 
+                  style={{ paddingRight: '70px' }}
+                />
+                <span style={{ 
+                  position: 'absolute', 
+                  right: '12px', 
+                  bottom: '8px', 
+                  fontSize: '10px', 
+                  color: '#888',
+                  pointerEvents: 'none',
+                  backgroundColor: '#fff',
+                  padding: '0 2px',
+                  lineHeight: '1'
+                }}>
+                  {(formData.name || '').length}/{CHARACTER_LIMITS.name}
+                </span>
+              </div>
             </div>
             <div className="form-col"></div>
           </div>
@@ -211,7 +317,18 @@ function App() {
           <div className="form-row">
             <div className="form-col">
               <label className="form-label">Mobile Number</label>
-              <input type="tel" name="mobile" className="form-control" pattern="[0-9]{10}" maxLength="10" title="Please enter a 10 digit mobile number" value={formData.mobile} onChange={handleInputChange} required />
+              <input 
+                type="text" 
+                name="mobile" 
+                className="form-control" 
+                pattern="[0-9]{10}" 
+                maxLength="10" 
+                placeholder="e.g. 9876543210"
+                title="Please enter a 10 digit mobile number" 
+                value={formData.mobile} 
+                onChange={handleInputChange} 
+                required 
+              />
             </div>
             <div className="form-col">
               <label className="form-label">Email Address</label>
@@ -248,7 +365,7 @@ function App() {
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <input type="number" name="workExperienceYears" className="form-control" style={{ width: '100px' }} min="0" max="100" value={formData.workExperienceYears} onChange={handleInputChange} required />
                 <span className="input-suffix">years</span>
-                <input type="number" name="workExperienceMonths" className="form-control" style={{ width: '100px' }} min="0" max="11" value={formData.workExperienceMonths} onChange={handleInputChange} required />
+                <input type="number" name="workExperienceMonths" className="form-control" style={{ width: '100px' }} min="0" max="11" value={formData.workExperienceMonths} onChange={handleInputChange} />
                 <span className="input-suffix">months</span>
               </div>
             </div>
@@ -269,7 +386,31 @@ function App() {
             <div className="form-row" style={{ gap: '40px' }}>
               <div className="form-col">
                 <label className="form-label">{formData.currentlyEmployed === 'No' ? 'Last Employer' : 'Current Employer'}</label>
-                <input type="text" name="lastEmployer" className="form-control" value={formData.lastEmployer} onChange={handleInputChange} />
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="text" 
+                    name="lastEmployer" 
+                    className="form-control" 
+                    placeholder="Enter employer name" 
+                    maxLength={CHARACTER_LIMITS.lastEmployer}
+                    value={formData.lastEmployer || ''} 
+                    onChange={handleInputChange} 
+                    style={{ paddingRight: '70px' }}
+                  />
+                  <span style={{ 
+                    position: 'absolute', 
+                    right: '12px', 
+                    bottom: '8px', 
+                    fontSize: '10px', 
+                    color: '#888',
+                    pointerEvents: 'none',
+                    backgroundColor: '#fff',
+                    padding: '0 2px',
+                    lineHeight: '1'
+                  }}>
+                    {(formData.lastEmployer || '').length}/{CHARACTER_LIMITS.lastEmployer}
+                  </span>
+                </div>
               </div>
               <div className="form-col">
                 <label className="form-label">{formData.currentlyEmployed === 'No' ? 'Last Salary' : 'Current Salary'} (Monthly)</label>
@@ -287,24 +428,91 @@ function App() {
               <label className="form-label">Expected Salary</label>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <span className="input-prefix">₹</span>
-                <input type="number" name="expectedSalary" className="form-control" style={{ width: '150px' }} min="0" value={formData.expectedSalary} onChange={handleInputChange} required />
+                <input 
+                  type="text" 
+                  name="expectedSalary" 
+                  className="form-control" 
+                  style={{ width: '150px' }} 
+                  pattern="[0-9]{1,10}" 
+                  value={formData.expectedSalary} 
+                  onChange={handleInputChange} 
+                  required 
+                />
                 <span className="input-suffix">/ month</span>
               </div>
             </div>
             <div className="form-col">
               <label className="form-label">If selected, when can you join?</label>
-              <input type="date" name="joiningDate" className="form-control" value={formData.joiningDate} onChange={handleInputChange} required />
+              <input 
+                type="date" 
+                name="joiningDate" 
+                className="form-control" 
+                min={getTodayDateString()} 
+                value={formData.joiningDate} 
+                onChange={handleInputChange} 
+                required 
+              />
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Tell us something that you learned on your own in the last month.</label>
-            <input type="text" name="recentLearning" className="form-control" maxLength="10000" value={formData.recentLearning} onChange={handleInputChange} required />
+            <label className="form-label">Your Past Projects / Tell us something that you learned on your own in the last month.</label>
+            <div style={{ position: 'relative' }}>
+              <input 
+                type="text" 
+                name="recentLearning" 
+                className="form-control" 
+                placeholder="Describe your past projects or recent learning..." 
+                maxLength={CHARACTER_LIMITS.recentLearning}
+                value={formData.recentLearning} 
+                onChange={handleInputChange} 
+                required 
+                style={{ paddingRight: '70px' }}
+              />
+              <span style={{ 
+                position: 'absolute', 
+                right: '12px', 
+                bottom: '8px', 
+                fontSize: '10px', 
+                color: '#888',
+                pointerEvents: 'none',
+                backgroundColor: '#fff',
+                padding: '0 2px',
+                lineHeight: '1'
+              }}>
+                {(formData.recentLearning || '').length}/{CHARACTER_LIMITS.recentLearning}
+              </span>
+            </div>
           </div>
 
           <div className="form-group">
             <label className="form-label">Why should we hire you?</label>
-            <input type="text" name="whyHireYou" className="form-control" maxLength="10000" value={formData.whyHireYou} onChange={handleInputChange} required />
+            <div style={{ position: 'relative' }}>
+              <input 
+                type="text" 
+                name="whyHireYou" 
+                className="form-control" 
+                placeholder="Explain why we should hire you..." 
+                maxLength={CHARACTER_LIMITS.whyHireYou}
+                value={formData.whyHireYou} 
+                onChange={handleInputChange} 
+                required 
+                style={{ paddingRight: '70px' }}
+              />
+              <span style={{ 
+                position: 'absolute', 
+                right: '12px', 
+                bottom: '8px', 
+                fontSize: '10px', 
+                color: '#888',
+                pointerEvents: 'none',
+                backgroundColor: '#fff',
+                padding: '0 2px',
+                lineHeight: '1'
+              }}>
+                {(formData.whyHireYou || '').length}/{CHARACTER_LIMITS.whyHireYou}
+              </span>
+            </div>
           </div>
 
           <div className="form-group" style={{ textAlign: 'left' }}>
@@ -329,7 +537,18 @@ function App() {
             <form onSubmit={handleAuthSubmit}>
               <div className="form-group">
                 <label className="form-label">Mobile Number</label>
-                <input type="tel" name="mobile" className="form-control" pattern="[0-9]{10}" maxLength="10" placeholder="10-digit number" value={authForm.mobile} onChange={handleAuthInputChange} required />
+                <input 
+                  type="text" 
+                  name="mobile" 
+                  className="form-control" 
+                  pattern="[0-9]{10}" 
+                  maxLength="10" 
+                  placeholder="e.g. 9876543210" 
+                  title="Please enter a 10 digit mobile number"
+                  value={authForm.mobile} 
+                  onChange={handleAuthInputChange} 
+                  required 
+                />
               </div>
               <div className="form-group">
                 <label className="form-label">Password</label>
